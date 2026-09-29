@@ -8,7 +8,8 @@ for svc in gateway postgrest auth functions; do
     rm -f "$STATE/$svc.pid"
   fi
 done
-if [ -f "$STATE/pgdata/postmaster.pid" ]; then
-  runuser -u postgres -- /usr/lib/postgresql/16/bin/pg_ctl -D "$STATE/pgdata" -m fast stop >/dev/null 2>&1 || true
+PGDATA="${BJUSS_PGROOT:-/tmp/bjuss-local}/pgdata"
+if [ -f "$PGDATA/postmaster.pid" ]; then
+  runuser -u postgres -- /usr/lib/postgresql/16/bin/pg_ctl -D "$PGDATA" -m fast stop >/dev/null 2>&1 || true
 fi
 echo "Stoppad."

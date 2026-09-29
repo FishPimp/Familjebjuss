@@ -13,13 +13,15 @@ ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 STATE="$ROOT/.local-stack"
 BIN="$STATE/bin"
 PGBIN="/usr/lib/postgresql/16/bin"
-PGDATA="$STATE/pgdata"
+# Databasfilerna ligger i /tmp eftersom användaren "postgres" inte alltid kommer åt hemkatalogen (t.ex. i GitHub Actions)
+PGROOT="${BJUSS_PGROOT:-/tmp/bjuss-local}"
+PGDATA="$PGROOT/pgdata"
 PGPORT=54322
 JWT_SECRET="super-secret-jwt-token-with-at-least-32-characters-long"
 export PGPASSWORD=postgres
 
 mkdir -p "$STATE" "$BIN" "$STATE/storage" "$STATE/logs"
-touch "$STATE/logs/postgres.log" && chown postgres:postgres "$STATE/logs/postgres.log"
+mkdir -p "$PGROOT" && chown postgres:postgres "$PGROOT"
 chmod 755 "$STATE"
 
 # --- binärer ---
@@ -52,7 +54,7 @@ cron.database_name = 'postgres'
 timezone = 'UTC'
 wal_level = logical
 EOF
-runuser -u postgres -- "$PGBIN/pg_ctl" -D "$PGDATA" -l "$STATE/logs/postgres.log" -w start >/dev/null
+runuser -u postgres -- "$PGBIN/pg_ctl" -D "$PGDATA" -l "$PGROOT/postgres.log" -w start >/dev/null
 PSQL=(psql -h 127.0.0.1 -p $PGPORT -U postgres -d postgres -v ON_ERROR_STOP=1 -q)
 "${PSQL[@]}" -f "$ROOT/scripts/local/bootstrap.sql"
 
