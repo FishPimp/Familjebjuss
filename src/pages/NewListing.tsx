@@ -5,8 +5,13 @@ import { PHOTO_BUCKET, supabase } from '../lib/supabase'
 import { useUserId } from '../lib/auth'
 import { processPhoto, type ProcessedPhoto } from '../lib/image'
 import { refreshAll, rpc } from '../lib/queries'
+import { analyzePhoto, type AiSuggestion } from '../lib/analyze'
 import {
   BRAND_SUGGESTIONS,
+  CAR_SEAT_MESSAGE,
+  SAFETY_WARNING,
+  isSafetyProduct,
+  mentionsCarSeat,
   CATEGORIES,
   CLOTHING_SIZES,
   CONDITIONS,
@@ -59,11 +64,17 @@ export function NewListing() {
   const [slot, setSlot] = useState(defaultWindow)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<unknown>(null)
+  const [ai, setAi] = useState<{ state: 'idle' | 'loading' | 'done' | 'off' | 'error'; suggestion?: AiSuggestion; message?: string }>({
+    state: 'idle',
+  })
+  const [childOverride, setChildOverride] = useState(false)
 
   useEffect(() => () => {
     if (photo) URL.revokeObjectURL(photo.previewUrl)
   }, [photo])
 
+  const categoryRef = useRef(category)
+  categoryRef.current = category
   const cat = category ? categoryById(category) : null
   const sizeType = category ? sizeTypeFor(category, subcategory) : 'none'
 
@@ -73,6 +84,16 @@ export function NewListing() {
     return { from, to, valid: to > from && to > new Date() }
   }, [slot])
 
+  const aiSuggestion = ai.state === 'done' ? ai.suggestion : undefined
+  const carSeat =
+    !!aiSuggestion?.contains_car_seat ||
+    mentionsCarSeat(subcategory) ||
+    mentionsCarSeat(brand) ||
+    mentionsCarSeat(description) ||
+    mentionsCarSeat(instructions)
+  const childWarning = !!aiSuggestion?.contains_child && !childOverride
+  const safety = isSafetyProduct({ subcategory, description, brand }) || !!aiSuggestion?.safety_product
+
   const missing: string[] = []
   if (!photo) missing.push('foto')
   if (!category) missing.push('kategori')
@@ -81,12 +102,37 @@ export function NewListing() {
   if (!condition) missing.push('skick')
   if (pickup === 'home' && !windowIso.valid) missing.push('en tid framåt')
 
+  /** Förifyll bara fält som användaren inte redan valt själv. */
+  function applySuggestion(sg: AiSuggestion) {
+    const chosen = categoryRef.current
+    if (!chosen || chosen === sg.category) {
+      setCategory(sg.category)
+      setSubcategory((s) => s ?? sg.subcategory)
+      setSizeCm((v) => v ?? sg.size_cm)
+      setShoeSize((v) => v ?? sg.shoe_size)
+    }
+    setCondition((c) => c ?? sg.condition)
+    setQuantity((q) => (q === 1 ? sg.quantity : q))
+    setBrand((b) => b || sg.brand || '')
+    setDescription((d) => d || sg.description || '')
+  }
+
   async function onFile(file: File | undefined) {
     if (!file) return
     setPhotoBusy(true)
     setError(null)
+    setChildOverride(false)
     try {
-      setPhoto(await processPhoto(file))
+      const processed = await processPhoto(file)
+      setPhoto(processed)
+      setPhotoBusy(false)
+      setAi({ state: 'loading' })
+      const result = await analyzePhoto(processed.full)
+      if (result.kind === 'ok') {
+        setAi({ state: 'done', suggestion: result.suggestion })
+        if (!result.suggestion.contains_car_seat) applySuggestion(result.suggestion)
+      } else if (result.kind === 'off') setAi({ state: 'off' })
+      else setAi({ state: 'error', message: result.message })
     } catch (e) {
       setError(e)
     } finally {
@@ -123,6 +169,8 @@ export function NewListing() {
         p_pickup_to: pickup === 'home' ? windowIso.to.toISOString() : null,
         p_door_code: pickup === 'door' ? doorCode || null : null,
         p_instructions: pickup === 'door' ? instructions || null : null,
+        p_ai_suggested: ai.state === 'done',
+        p_child_warning_overridden: !!aiSuggestion?.contains_child && childOverride,
       })
       refreshAll(qc)
       navigate(`/annons/${listingId}?ny=1`, { replace: true })
@@ -161,6 +209,45 @@ export function NewListing() {
                 eller välj en bild
               </button>
               <p className="px-6 text-center text-xs text-muted">Fota gärna hela högen. Inga barn på bilden, tack!</p>
+            </div>
+          )}
+          {ai.state === 'loading' && (
+            <Notice className="mt-3 flex items-center gap-2" data-testid="ai-status">
+              <span className="animate-pulse">✨</span> Tolkar bilden och fyller i åt dig…
+            </Notice>
+          )}
+          {ai.state === 'done' && aiSuggestion && !carSeat && (
+            <Notice tone="good" className="mt-3" data-testid="ai-status">
+              ✨ Förifyllt utifrån bilden. Rätta bara det som är fel.
+              {aiSuggestion.confidence === 'low' && ' (Bilden var svår att tolka – dubbelkolla gärna.)'}
+            </Notice>
+          )}
+          {ai.state === 'error' && <Notice className="mt-3">{ai.message}</Notice>}
+          {childWarning && (
+            <div role="alert" className="mt-3 space-y-2 rounded-2xl border border-accent bg-accent-soft p-4 text-sm" data-testid="child-warning">
+              <p>
+                <strong>Det ser ut som att ett barn syns på bilden.</strong> Av hänsyn till barnen visar vi aldrig barn i Bjuss. Ta
+                gärna om bilden med bara sakerna.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Button className="!min-h-10 !py-2 text-sm" onClick={() => cameraRef.current?.click()}>
+                  📷 Ta om bilden
+                </Button>
+                <button className="text-xs text-muted underline" onClick={() => setChildOverride(true)}>
+                  Det är inget barn på bilden
+                </button>
+              </div>
+            </div>
+          )}
+          {carSeat && (
+            <div role="alert" className="mt-3 space-y-2 rounded-2xl border border-danger/40 bg-danger-soft p-4 text-sm text-ink" data-testid="car-seat-block">
+              <p className="font-bold text-danger">🚫 Bilbarnstolar kan inte bjussas</p>
+              <p>{CAR_SEAT_MESSAGE}</p>
+              {aiSuggestion?.contains_car_seat && (
+                <Button variant="secondary" className="!min-h-10 !py-2 text-sm" onClick={() => galleryRef.current?.click()}>
+                  Välj en annan bild
+                </Button>
+              )}
             </div>
           )}
         </section>
@@ -290,6 +377,12 @@ export function NewListing() {
           <Textarea id="desc" rows={2} maxLength={500} placeholder="T.ex. liten fläck på ärmen" value={description} onChange={(e) => setDescription(e.target.value)} />
         </section>
 
+        {safety && !carSeat && (
+          <Notice tone="warn" data-testid="safety-warning">
+            ⚠️ {SAFETY_WARNING}
+          </Notice>
+        )}
+
         {/* Hämtning */}
         <section className="space-y-3">
           <Label>Hur hämtas det?</Label>
@@ -356,7 +449,7 @@ export function NewListing() {
       <div className="pb-safe fixed inset-x-0 bottom-0 border-t border-line bg-surface/95 backdrop-blur">
         <div className="mx-auto max-w-md space-y-2 p-4">
           {missing.length > 0 && <Notice className="py-2 text-center text-xs">Saknas: {missing.join(', ')}</Notice>}
-          <Button className="w-full" disabled={missing.length > 0} loading={busy} onClick={publish}>
+          <Button className="w-full" disabled={missing.length > 0 || carSeat || childWarning} loading={busy} onClick={publish}>
             Bjussa!
           </Button>
         </div>

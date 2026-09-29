@@ -165,3 +165,21 @@ export const FEED_ADS_ENABLED = false
 
 /** Adress-sökning (OpenStreetMap Nominatim). Kan bytas mot annan leverantör senare. */
 export const GEOCODER_URL = import.meta.env.VITE_GEOCODER_URL || 'https://nominatim.openstreetmap.org'
+
+/** Säkerhetsprodukter som får en tydlig varning om utgångsdatum och olycksrisk */
+export const SAFETY_SUBCATEGORIES = ['Säng', 'Bärsele', 'Babysitter', 'Matstol', 'Barnvagn', 'Cyklar', 'Skridskor', 'Skidor']
+const SAFETY_WORDS = /hjälm|spjälsäng|grind|bärsele|babysitter|matstol|barnvagn|sulky|flytväst|skyddsväst/i
+
+export function isSafetyProduct(l: { subcategory?: string | null; description?: string | null; brand?: string | null }): boolean {
+  return (!!l.subcategory && SAFETY_SUBCATEGORIES.includes(l.subcategory)) || SAFETY_WORDS.test(`${l.description ?? ''} ${l.brand ?? ''}`)
+}
+
+export const SAFETY_WARNING =
+  'Säkerhetsprodukt: kontrollera att den är hel, komplett och inte återkallad (sök på tillverkarens namn och "återkallelse"). Hjälmar har ett bäst före-datum och ska bytas efter en krock, även om de ser hela ut. Kontrollera sängar, grindar och selar så att inga delar saknas.'
+
+/** Samma ord som databasen spärrar (se migreringen för steg 3) */
+const CAR_SEAT_WORDS = /(bil[ -]?barns?[ -]?stol|bilstol|bältes[ -]?stol|bältes[ -]?kudde|babyskydd|isofix|car[ -]?seat|autostol|bilsete)/i
+export const mentionsCarSeat = (text: string | null | undefined) => !!text && CAR_SEAT_WORDS.test(text)
+
+export const CAR_SEAT_MESSAGE =
+  'Bilbarnstolar och babyskydd kan inte bjussas i Bjuss. En bilbarnstol kan ha skador efter en krock som inte syns, och det går inte att veta dess historia. Lämna den hellre till återvinningen. Tack för att du förstår! 💛'

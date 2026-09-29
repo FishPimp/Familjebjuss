@@ -25,6 +25,23 @@ const DB_URL = process.env.DB_URL ?? 'postgres://postgres:postgres@127.0.0.1:543
 const pool = new pg.Pool({ connectionString: DB_URL, max: 5 })
 const mails = []
 
+// Låtsas-Claude för tester: svarar med ett förinställt förslag
+let anthropicNext = {
+  category: 'clothes',
+  subcategory: 'Tröjor',
+  size_cm: 98,
+  shoe_size: null,
+  quantity: 3,
+  condition: 'used_intact',
+  brand: 'Lindex',
+  description: 'Tre randiga tröjor i blått och vitt.',
+  contains_car_seat: false,
+  contains_child: false,
+  safety_product: false,
+  confidence: 'high',
+}
+let anthropicLast = null
+
 // ---------- JWT (HS256) ----------
 const b64url = (buf) => Buffer.from(buf).toString('base64url')
 export function signJwt(payload, secret = JWT_SECRET) {
@@ -241,6 +258,28 @@ const server = http.createServer(async (req, res) => {
       const to = (url.searchParams.get('to') ?? '').toLowerCase()
       const m = [...mails].reverse().find((x) => x.to.includes(to))
       return m ? send(res, 200, m) : send(res, 404, { message: 'Inget mejl' })
+    }
+    if (url.pathname === '/__anthropic/next' && req.method === 'POST') {
+      anthropicNext = JSON.parse((await readBody(req)).toString())
+      return send(res, 200, { ok: true })
+    }
+    if (url.pathname === '/__anthropic/last') return send(res, 200, anthropicLast ?? {})
+    if (url.pathname === '/__anthropic/v1/messages' && req.method === 'POST') {
+      const body = JSON.parse((await readBody(req)).toString())
+      for (const m of body.messages ?? [])
+        for (const c of Array.isArray(m.content) ? m.content : [])
+          if (c.type === 'image') c.source.data = `<${c.source.data.length} tecken>`
+      anthropicLast = { headers: { 'anthropic-beta': req.headers['anthropic-beta'], 'x-api-key': req.headers['x-api-key'] ? 'satt' : 'saknas' }, body }
+      return send(res, 200, {
+        id: 'msg_test',
+        type: 'message',
+        role: 'assistant',
+        model: body.model,
+        content: [{ type: 'text', text: JSON.stringify(anthropicNext) }],
+        stop_reason: 'end_turn',
+        stop_sequence: null,
+        usage: { input_tokens: 1200, output_tokens: 120 },
+      })
     }
     if (url.pathname === '/__health') return send(res, 200, { ok: true })
     if (url.pathname.startsWith('/realtime/')) return send(res, 404, { message: 'Realtime finns inte lokalt' })

@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react'
+import type { ButtonHTMLAttributes, HTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react'
 import { Link } from 'react-router'
 import { errorMessage } from '../lib/errors'
 
@@ -84,13 +84,22 @@ export function ErrorBox({ error, className = '' }: { error: unknown; className?
   )
 }
 
-export function Notice({ children, tone = 'info', className = '' }: { children: ReactNode; tone?: 'info' | 'warn' | 'good'; className?: string }) {
+export function Notice({
+  children,
+  tone = 'info',
+  className = '',
+  ...rest
+}: { children: ReactNode; tone?: 'info' | 'warn' | 'good'; className?: string } & HTMLAttributes<HTMLDivElement>) {
   const tones = {
     info: 'bg-brand-soft text-brand-dark',
     warn: 'bg-accent-soft text-ink',
     good: 'bg-brand-soft text-brand-dark',
   }
-  return <div className={`rounded-2xl px-4 py-3 text-sm ${tones[tone]} ${className}`}>{children}</div>
+  return (
+    <div {...rest} className={`rounded-2xl px-4 py-3 text-sm ${tones[tone]} ${className}`}>
+      {children}
+    </div>
+  )
 }
 
 export function Label({ children, htmlFor, optional }: { children: ReactNode; htmlFor?: string; optional?: boolean }) {

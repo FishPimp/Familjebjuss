@@ -1,6 +1,6 @@
 import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { useListing, useAction, rpc } from '../lib/queries'
-import { conditionLabel, pickupLabel } from '../config'
+import { SAFETY_WARNING, conditionLabel, isSafetyProduct, pickupLabel } from '../config'
 import { formatDistance, formatTimeWindow, listingSize, listingTitle, timeAgo } from '../lib/format'
 import { Photo } from '../components/Photo'
 import { ReportBlockMenu } from '../components/ReportBlock'
@@ -72,6 +72,12 @@ export function ListingPage() {
         </div>
 
         {l.description && <p className="whitespace-pre-line">{l.description}</p>}
+
+        {isSafetyProduct(l) && (
+          <Notice tone="warn" data-testid="safety-warning">
+            ⚠️ {SAFETY_WARNING}
+          </Notice>
+        )}
 
         <div className="rounded-2xl border border-line bg-surface p-3 text-sm">
           <div className="font-semibold">{pickupLabel(l.pickup_method)}</div>

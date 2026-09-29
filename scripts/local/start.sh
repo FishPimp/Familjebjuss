@@ -114,6 +114,27 @@ JWT_SECRET="$JWT_SECRET" STORAGE_DIR="$STATE/storage" TEMPLATE_DIR="$ROOT/supaba
   nohup node "$ROOT/scripts/local/gateway.mjs" > "$STATE/logs/gateway.log" 2>&1 &
 echo $! > "$STATE/gateway.pid"
 
+# --- Edge Functions via Deno (med låtsas-Claude) ---
+DENO="$(command -v deno || true)"
+if [ -z "$DENO" ]; then
+  if [ ! -x "$STATE/deno/node_modules/.bin/deno" ]; then
+    mkdir -p "$STATE/deno" && (cd "$STATE/deno" && npm init -y >/dev/null && npm install deno --silent)
+  fi
+  DENO="$STATE/deno/node_modules/.bin/deno"
+fi
+ANON_FOR_FN=$(node -e "
+const c=require('crypto');const b=o=>Buffer.from(JSON.stringify(o)).toString('base64url');
+const h=b({alg:'HS256',typ:'JWT'}),p=b({role:'anon',iss:'supabase-local',iat:1700000000,exp:2000000000});
+console.log(h+'.'+p+'.'+c.createHmac('sha256','$JWT_SECRET').update(h+'.'+p).digest('base64url'))")
+(
+  cd "$ROOT/supabase/functions"
+  SUPABASE_URL=http://127.0.0.1:54321 SUPABASE_ANON_KEY="$ANON_FOR_FN" \
+  ANTHROPIC_API_KEY=test-key ANTHROPIC_BASE_URL=http://127.0.0.1:54321/__anthropic \
+    nohup "$DENO" run --allow-net --allow-env --allow-read --node-modules-dir=none --config deno.json \
+    "$ROOT/scripts/local/functions.ts" > "$STATE/logs/functions.log" 2>&1 &
+  echo $! > "$STATE/functions.pid"
+)
+
 for i in $(seq 1 40); do
   curl -sf http://127.0.0.1:54321/__health >/dev/null 2>&1 && curl -sf http://127.0.0.1:3000/ >/dev/null 2>&1 && break
   sleep 0.5
