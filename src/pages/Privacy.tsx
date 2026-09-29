@@ -61,7 +61,7 @@ export function Privacy() {
           </li>
           <li>
             Anthropic (Claude) – om du använder bildtolkning skickas bilden för att föreslå kategori, storlek och skick.
-            Bilden sparas inte där för träning.
+            Anthropic använder inte bilder som skickas via API:t för att träna sina modeller.
           </li>
         </ul>
 

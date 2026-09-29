@@ -89,8 +89,9 @@ for i in $(seq 1 60); do
   sleep 0.5
 done
 
-# --- våra migreringar, i ordning ---
+# --- våra migreringar, i ordning (SKIP_MIGRATIONS=1 hoppar över, t.ex. för att testa "supabase db push") ---
 for f in "$ROOT"/supabase/migrations/*.sql; do
+  [ "${SKIP_MIGRATIONS:-}" = "1" ] && break
   [ -e "$f" ] || continue
   echo "Kör migrering $(basename "$f")"
   "${PSQL[@]}" -f "$f"

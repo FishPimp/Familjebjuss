@@ -1,0 +1,58 @@
+# Automatiska tester vid varje ändring. Grön bock = allt fungerar.
+name: Tester
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  app:
+    name: App (typer, enhetstester, bygge)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Typkontroll av bildtolkningen (Edge Function)
+        working-directory: supabase/functions
+        run: deno check --node-modules-dir=none --config deno.json analyze-photo/index.ts
+
+  e2e:
+    name: Databas och webbläsare (lokal Supabase)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Installera PostGIS och pg_cron
+        run: sudo apt-get update && sudo apt-get install -y postgresql-16-postgis-3 postgresql-16-cron
+      - name: Starta lokal Supabase
+        run: sudo -E env "PATH=$PATH" bash scripts/local/start.sh
+      - name: Databastester (säkerhetsregler och logik)
+        run: bash scripts/local/test-db.sh
+      - name: Installera webbläsare
+        run: npx playwright install --with-deps chromium
+      - name: Webbläsartester
+        run: npm run test:e2e
+      - name: Spara skärmbilder
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: skarmbilder
+          path: test-results/
+          retention-days: 7
