@@ -1,9 +1,10 @@
-import { useState } from 'react'
-import { Link } from 'react-router'
+import { useEffect, useState } from 'react'
+import { Link, useLocation } from 'react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import { PHOTO_BUCKET, supabase } from '../lib/supabase'
 import { useAuth, useMe } from '../lib/auth'
-import { rpc } from '../lib/queries'
+import { rpc, useMyBlocks, refreshAll } from '../lib/queries'
+import { ChildrenCard } from '../components/ChildrenCard'
 import { Button, Card, ErrorBox, Input, Label, PageSpinner } from '../components/ui'
 
 export function ProfilePage() {
@@ -13,6 +14,11 @@ export function ProfilePage() {
   const [name, setName] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<unknown>(null)
+  const location = useLocation()
+
+  useEffect(() => {
+    if (location.hash) document.getElementById(location.hash.slice(1))?.scrollIntoView({ block: 'start' })
+  }, [location.hash, me.data])
 
   if (me.isLoading || !me.data?.profile) return <PageSpinner />
   const { profile, home } = me.data
@@ -66,6 +72,10 @@ export function ProfilePage() {
           Ändra adress
         </Link>
       </Card>
+
+      <ChildrenCard />
+
+      <BlockedCard />
 
       <Card className="space-y-3">
         <h2 className="font-bold">Konto</h2>
@@ -121,7 +131,7 @@ function DeleteAccount() {
     <Card className="space-y-3 border-danger/30">
       <h2 className="font-bold text-danger">Radera konto</h2>
       {!open ? (
-        <Button variant="ghost" className="!text-danger" onClick={() => setOpen(true)}>
+        <Button variant="secondary" className="!text-danger" onClick={() => setOpen(true)}>
           Radera mitt konto och all data
         </Button>
       ) : (
@@ -145,6 +155,31 @@ function DeleteAccount() {
           </div>
         </div>
       )}
+    </Card>
+  )
+}
+
+function BlockedCard() {
+  const q = useMyBlocks()
+  const qc = useQueryClient()
+  if (!q.data?.length) return null
+  return (
+    <Card className="space-y-2">
+      <h2 className="font-bold">Blockerade</h2>
+      {q.data.map((b) => (
+        <div key={b.user_id} className="flex items-center justify-between text-sm">
+          <span>{b.display_name}</span>
+          <button
+            className="font-semibold text-brand"
+            onClick={async () => {
+              await rpc('unblock_user', { p_user_id: b.user_id })
+              refreshAll(qc)
+            }}
+          >
+            Avblockera
+          </button>
+        </div>
+      ))}
     </Card>
   )
 }

@@ -80,6 +80,10 @@ export interface ListingRequest {
   taker_id: string | null
   taker_name: string
   conversation_id: string | null
+  taker_given: number | null
+  taker_received: number | null
+  taker_no_shows: number | null
+  taker_reliability_pct: number | null
 }
 
 export interface MyRequest {
@@ -104,6 +108,7 @@ export interface MyRequest {
   giver_id: string
   giver_name: string
   conversation_id: string | null
+  rating: 'as_described' | 'not_quite' | null
 }
 
 export interface PickupDetails {
@@ -146,4 +151,14 @@ export interface Message {
   kind: 'user' | 'system'
   body: string
   created_at: string
+}
+
+export interface UserStats {
+  user_id: string
+  given_count: number
+  received_count: number
+  no_show_count: number
+  reliability_pct: number | null
+  rating_good: number
+  rating_total: number
 }

@@ -4,6 +4,7 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 export PGPASSWORD=postgres
+export PGOPTIONS="-c client_min_messages=warning"
 PSQL=(psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -v ON_ERROR_STOP=1 -q -X)
 
 "${PSQL[@]}" -f "$ROOT/supabase/tests/00_helpers.sql" >/dev/null

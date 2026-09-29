@@ -8,6 +8,7 @@ import type { ConversationView, Message } from '../lib/types'
 import { listingTitle } from '../lib/format'
 import { Photo } from '../components/Photo'
 import { PickupCard } from '../components/PickupCard'
+import { ReportBlockMenu } from '../components/ReportBlock'
 import { Button, ErrorBox, Notice, PageHeader, PageSpinner } from '../components/ui'
 
 export function ChatPage() {
@@ -77,7 +78,11 @@ export function ChatPage() {
 
   return (
     <div className="mx-auto flex h-dvh max-w-md flex-col">
-      <PageHeader title={c.other_name} back={() => (window.history.length > 1 ? navigate(-1) : navigate('/chatt'))} />
+      <PageHeader
+        title={c.other_name}
+        back={() => (window.history.length > 1 ? navigate(-1) : navigate('/chatt'))}
+        right={<ReportBlockMenu userId={c.other_user_id} userName={c.other_name} />}
+      />
 
       <div className="border-b border-line bg-surface px-4 py-3">
         <Link to={`/annons/${c.listing_id}`} className="flex items-center gap-3">

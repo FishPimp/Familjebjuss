@@ -1,4 +1,7 @@
+import { useEffect } from 'react'
 import { Navigate, Outlet, Route, Routes } from 'react-router'
+import { useQueryClient } from '@tanstack/react-query'
+import { refreshAll, rpc } from './lib/queries'
 import { configMissing } from './lib/supabase'
 import { useAuth, useMe } from './lib/auth'
 import { BottomNav } from './components/BottomNav'
@@ -25,9 +28,26 @@ function Layout() {
   )
 }
 
+/** Släpper saker som inte hämtats inom tidsgränsen (görs också automatiskt i databasen). */
+function useExpireOverdue(enabled: boolean) {
+  const qc = useQueryClient()
+  useEffect(() => {
+    if (!enabled) return
+    const run = () =>
+      rpc<number>('expire_overdue_requests')
+        .then((n) => n > 0 && refreshAll(qc))
+        .catch(() => {})
+    run()
+    const onVisible = () => document.visibilityState === 'visible' && run()
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [enabled, qc])
+}
+
 function RequireReady() {
   const { session, loading } = useAuth()
   const me = useMe()
+  useExpireOverdue(!!me.data?.home)
   if (loading) return <PageSpinner />
   if (!session) return <Navigate to="/login" replace />
   if (me.isLoading) return <PageSpinner />

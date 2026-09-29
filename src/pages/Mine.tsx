@@ -5,7 +5,8 @@ import type { ListingRequest, MyListing, MyRequest, RequestStatus } from '../lib
 import { formatDateTime, listingSize, listingTitle, timeAgo } from '../lib/format'
 import { Photo } from '../components/Photo'
 import { PickupCard } from '../components/PickupCard'
-import { Badge, Button, Card, EmptyState, ErrorBox, LinkButton, PageSpinner } from '../components/ui'
+import { Badge, Button, Card, EmptyState, ErrorBox, LinkButton, Notice, PageSpinner } from '../components/ui'
+import { UserStatsLine } from '../components/UserStatsLine'
 
 const listingStatusText = {
   available: { label: 'Ledig', tone: 'brand' },
@@ -154,6 +155,7 @@ function RequestRow({
           <div className="text-xs text-muted">
             {r.status === 'approved' ? `Godkänd · hämtas senast ${formatDateTime(r.pickup_deadline)}` : `Frågade ${timeAgo(r.created_at)}`}
           </div>
+          <UserStatsLine given={r.taker_given} received={r.taker_received} noShows={r.taker_no_shows} reliability={r.taker_reliability_pct} />
         </div>
         {r.conversation_id && (
           <Link to={`/chatt/${r.conversation_id}`} className="rounded-full border border-line bg-surface px-3 py-1.5 text-sm">
@@ -210,6 +212,7 @@ function Taking() {
 function MyRequestCard({ r }: { r: MyRequest }) {
   const cancel = useAction<{ p_request_id: string }>('cancel_request')
   const picked = useAction<{ p_request_id: string }>('mark_picked_up')
+  const rate = useAction<{ p_request_id: string; p_rating: string }>('rate_pickup')
   const st = requestStatusText[r.status]
   return (
     <Card className="space-y-3 p-3">
@@ -223,22 +226,39 @@ function MyRequestCard({ r }: { r: MyRequest }) {
           <div className="mt-1 flex flex-wrap gap-1">
             <Badge tone={st.tone}>{st.label}</Badge>
             {r.status === 'pending' && r.queue_position && <Badge>Plats {r.queue_position} i kön</Badge>}
-            {r.status === 'picked_up' && !r.taker_confirmed && <Badge tone="accent">Bekräfta hämtning</Badge>}
+            {r.status === 'picked_up' && !r.taker_confirmed && !r.rating && <Badge tone="accent">Bekräfta hämtning</Badge>}
           </div>
         </div>
       </Link>
 
       {r.status === 'approved' && <PickupCard requestId={r.id} />}
 
+      {r.status === 'expired' && (
+        <Notice tone="warn">
+          Hämtningen gjordes inte i tid, så saken gick vidare till nästa i kön. Det räknas som en missad hämtning i din
+          pålitlighet.
+        </Notice>
+      )}
+
+      {r.status === 'picked_up' && !r.rating && (
+        <div className="rounded-2xl bg-bg p-3" data-testid="rating">
+          <p className="mb-2 text-sm font-semibold">Stämde det med beskrivningen?</p>
+          <div className="flex gap-2">
+            <Button className="flex-1 !min-h-10 !py-2 text-sm" loading={rate.isPending} onClick={() => rate.mutate({ p_request_id: r.id, p_rating: 'as_described' })}>
+              👍 Stämde
+            </Button>
+            <Button variant="secondary" className="flex-1 !min-h-10 !py-2 text-sm" disabled={rate.isPending} onClick={() => rate.mutate({ p_request_id: r.id, p_rating: 'not_quite' })}>
+              🤏 Inte riktigt
+            </Button>
+          </div>
+        </div>
+      )}
+      {r.rating && <p className="text-xs text-muted">Ditt omdöme: {r.rating === 'as_described' ? '👍 Stämde med beskrivningen' : '🤏 Inte riktigt'}</p>}
+
       <div className="flex flex-wrap gap-2">
         {r.status === 'approved' && (
           <Button className="flex-1 !min-h-10 !py-2 text-sm" loading={picked.isPending} onClick={() => picked.mutate({ p_request_id: r.id })}>
             ✅ Jag har hämtat
-          </Button>
-        )}
-        {r.status === 'picked_up' && !r.taker_confirmed && (
-          <Button className="flex-1 !min-h-10 !py-2 text-sm" loading={picked.isPending} onClick={() => picked.mutate({ p_request_id: r.id })}>
-            ✅ Ja, jag har hämtat
           </Button>
         )}
         {r.conversation_id && (
@@ -259,7 +279,7 @@ function MyRequestCard({ r }: { r: MyRequest }) {
           </Button>
         )}
       </div>
-      <ErrorBox error={cancel.error ?? picked.error} />
+      <ErrorBox error={cancel.error ?? picked.error ?? rate.error} />
     </Card>
   )
 }

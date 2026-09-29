@@ -3,6 +3,7 @@ import { useListing, useAction, rpc } from '../lib/queries'
 import { conditionLabel, pickupLabel } from '../config'
 import { formatDistance, formatTimeWindow, listingSize, listingTitle, timeAgo } from '../lib/format'
 import { Photo } from '../components/Photo'
+import { ReportBlockMenu } from '../components/ReportBlock'
 import { Badge, Button, EmptyState, ErrorBox, LinkButton, Notice, PageHeader, PageSpinner } from '../components/ui'
 import { useState } from 'react'
 
@@ -48,7 +49,11 @@ export function ListingPage() {
 
   return (
     <div>
-      <PageHeader title={listingTitle(l)} back={() => (window.history.length > 1 ? navigate(-1) : navigate('/'))} />
+      <PageHeader
+        title={listingTitle(l)}
+        back={() => (window.history.length > 1 ? navigate(-1) : navigate('/'))}
+        right={!l.is_mine && <ReportBlockMenu listingId={l.id} userId={l.giver_id} userName={l.giver_name} />}
+      />
       {params.get('ny') && <Notice tone="good" className="m-4">🎉 Tack! Din bjussning syns nu för grannar i närheten.</Notice>}
 
       <Photo path={l.photo_path} category={l.category} alt={listingTitle(l)} className="aspect-square w-full" />

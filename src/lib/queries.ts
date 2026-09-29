@@ -10,7 +10,9 @@ import type {
   MyListing,
   MyRequest,
   PickupDetails,
+  UserStats,
 } from './types'
+import type { Child } from './sizes'
 
 export async function rpc<T>(fn: string, args?: Record<string, unknown>): Promise<T> {
   const { data, error } = await supabase.rpc(fn, args)
@@ -20,15 +22,67 @@ export async function rpc<T>(fn: string, args?: Record<string, unknown>): Promis
 
 /** Efter att något ändrats: hämta om allt som kan ha påverkats. */
 export function refreshAll(qc: QueryClient) {
-  for (const key of ['feed', 'listing', 'my-listings', 'listing-requests', 'my-requests', 'conversations', 'conversation', 'messages', 'unread', 'pickup', 'stats', 'pickup-status'])
+  for (const key of ['children', 'blocks', 'feed', 'listing', 'my-listings', 'listing-requests', 'my-requests', 'conversations', 'conversation', 'messages', 'unread', 'pickup', 'stats', 'pickup-status'])
     qc.invalidateQueries({ queryKey: [key] })
 }
 
-export function useFeed() {
+export interface FeedFilters {
+  category?: string | null
+  subcategory?: string | null
+  sizesCm?: number[] | null
+  shoeSizes?: number[] | null
+  /** false = "passar mina barn": saker utan storlek visas också */
+  sizeStrict?: boolean
+  conditions?: string[] | null
+  brand?: string | null
+  search?: string | null
+}
+
+export function useFeed(filters: FeedFilters = {}) {
   const uid = useUserId()
   return useQuery({
-    queryKey: ['feed', uid],
-    queryFn: () => rpc<ListingView[]>('feed', { p_limit: 60 }),
+    queryKey: ['feed', uid, filters],
+    queryFn: () =>
+      rpc<ListingView[]>('feed', {
+        p_limit: 60,
+        p_category: filters.category || null,
+        p_subcategory: filters.subcategory || null,
+        p_sizes_cm: filters.sizesCm?.length ? filters.sizesCm : null,
+        p_shoe_sizes: filters.shoeSizes?.length ? filters.shoeSizes : null,
+        p_size_strict: filters.sizeStrict ?? true,
+        p_conditions: filters.conditions?.length ? filters.conditions : null,
+        p_brand: filters.brand?.trim() || null,
+        p_search: filters.search?.trim() || null,
+      }),
+  })
+}
+
+export function useChildren() {
+  const uid = useUserId()
+  return useQuery({
+    queryKey: ['children', uid],
+    enabled: !!uid,
+    queryFn: async () => {
+      const { data, error } = await supabase.from('children').select('*').order('birth_month', { ascending: false })
+      if (error) throw error
+      return data as Child[]
+    },
+  })
+}
+
+export function useUserStats(userId: string | null | undefined) {
+  return useQuery({
+    queryKey: ['stats', userId],
+    enabled: !!userId,
+    queryFn: async () => (await rpc<UserStats[]>('user_stats', { p_user_id: userId }))[0] ?? null,
+  })
+}
+
+export function useMyBlocks() {
+  const uid = useUserId()
+  return useQuery({
+    queryKey: ['blocks', uid],
+    queryFn: () => rpc<{ user_id: string; display_name: string; created_at: string }[]>('my_blocks'),
   })
 }
 
