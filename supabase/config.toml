@@ -1,0 +1,22 @@
+# Inställningar för Supabase CLI (används av GitHub Actions för att uppdatera databasen).
+# Ändringar här skickas INTE automatiskt till ditt Supabase-projekt – se README.
+project_id = "bjuss"
+
+[api]
+schemas = ["public"]
+
+[auth]
+site_url = "http://localhost:5173"
+
+[auth.email]
+enable_signup = true
+otp_length = 6
+otp_expiry = 3600
+
+[auth.email.template.magic_link]
+subject = "Din kod till Bjuss"
+content_path = "./supabase/templates/magic_link.html"
+
+[auth.email.template.confirmation]
+subject = "Din kod till Bjuss"
+content_path = "./supabase/templates/confirmation.html"

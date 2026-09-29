@@ -1,0 +1,11 @@
+{
+  "name": "bjuss-local-stack",
+  "private": true,
+  "type": "module",
+  "description": "Lokal mini-Supabase för tester (databas, inloggning, API, bildlagring, fångade mejl).",
+  "dependencies": {
+    "mailparser": "^3.9.31",
+    "pg": "^8.23.0",
+    "smtp-server": "^3.19.15"
+  }
+}
