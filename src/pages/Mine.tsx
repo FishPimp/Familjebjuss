@@ -150,7 +150,13 @@ function RequestRow({
         <div>
           <div className="font-semibold">
             {position ? <span className="mr-1 text-muted">{position}.</span> : null}
-            {r.taker_name}
+            {r.taker_id ? (
+              <Link to={`/anvandare/${r.taker_id}`} className="underline decoration-line underline-offset-2">
+                {r.taker_name}
+              </Link>
+            ) : (
+              r.taker_name
+            )}
           </div>
           <div className="text-xs text-muted">
             {r.status === 'approved' ? `Godkänd · hämtas senast ${formatDateTime(r.pickup_deadline)}` : `Frågade ${timeAgo(r.created_at)}`}

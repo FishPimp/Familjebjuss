@@ -11,6 +11,8 @@ import type {
   MyRequest,
   PickupDetails,
   UserStats,
+  PublicProfile,
+  PickupStatus,
 } from './types'
 import type { Child } from './sizes'
 
@@ -161,5 +163,22 @@ export function useAction<TArgs extends Record<string, unknown>, TResult = unkno
   return useMutation({
     mutationFn: (args: TArgs) => rpc<TResult>(fn, args),
     onSettled: () => refreshAll(qc),
+  })
+}
+
+export function usePublicProfile(userId: string | null | undefined) {
+  return useQuery({
+    queryKey: ['stats', 'profile', userId],
+    enabled: !!userId,
+    queryFn: async () => (await rpc<PublicProfile[]>('public_profile', { p_user_id: userId }))[0] ?? null,
+  })
+}
+
+export function usePickupStatus() {
+  const uid = useUserId()
+  return useQuery({
+    queryKey: ['pickup-status', uid],
+    enabled: !!uid,
+    queryFn: async () => (await rpc<PickupStatus[]>('my_pickup_status'))[0] ?? null,
   })
 }

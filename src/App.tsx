@@ -18,6 +18,7 @@ import { ChatPage } from './pages/ChatPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { EditAddress } from './pages/EditAddress'
 import { Privacy } from './pages/Privacy'
+import { PublicProfilePage } from './pages/PublicProfilePage'
 
 function Layout() {
   return (
@@ -76,6 +77,7 @@ export function App() {
           <Route path="/chatt" element={<Chats />} />
           <Route path="/profil" element={<ProfilePage />} />
           <Route path="/profil/adress" element={<EditAddress />} />
+          <Route path="/anvandare/:id" element={<PublicProfilePage />} />
         </Route>
         <Route path="/bjussa" element={<NewListing />} />
         <Route path="/chatt/:id" element={<ChatPage />} />

@@ -162,3 +162,26 @@ export interface UserStats {
   rating_good: number
   rating_total: number
 }
+
+export interface PublicProfile {
+  id: string
+  display_name: string
+  area_name: string | null
+  member_since: string
+  given_count: number
+  received_count: number
+  no_show_count: number
+  reliability_pct: number | null
+  rating_good: number
+  rating_total: number
+  medal_points: number
+  unique_takers: number
+}
+
+export interface PickupStatus {
+  used: number
+  monthly_limit: number
+  free_left: number
+  notice_at: number
+  reached: boolean
+}

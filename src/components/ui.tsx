@@ -71,8 +71,12 @@ export function PageSpinner() {
   )
 }
 
-export function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return <div className={`rounded-3xl border border-line bg-surface p-4 shadow-sm ${className}`}>{children}</div>
+export function Card({ children, className = '', ...rest }: { children: ReactNode; className?: string } & HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div {...rest} className={`rounded-3xl border border-line bg-surface p-4 shadow-sm ${className}`}>
+      {children}
+    </div>
+  )
 }
 
 export function ErrorBox({ error, className = '' }: { error: unknown; className?: string }) {

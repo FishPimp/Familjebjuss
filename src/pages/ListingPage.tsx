@@ -1,5 +1,5 @@
-import { useNavigate, useParams, useSearchParams } from 'react-router'
-import { useListing, useAction, rpc } from '../lib/queries'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
+import { useListing, useAction, rpc, usePickupStatus } from '../lib/queries'
 import { SAFETY_WARNING, conditionLabel, isSafetyProduct, pickupLabel } from '../config'
 import { formatDistance, formatTimeWindow, listingSize, listingTitle, timeAgo } from '../lib/format'
 import { Photo } from '../components/Photo'
@@ -12,6 +12,7 @@ export function ListingPage() {
   const [params] = useSearchParams()
   const navigate = useNavigate()
   const q = useListing(id)
+  const pickupStatus = usePickupStatus()
   const request = useAction<{ p_listing_id: string }, string>('request_listing')
   const cancel = useAction<{ p_request_id: string }>('cancel_request')
   const remove = useAction<{ p_listing_id: string }>('remove_listing')
@@ -86,7 +87,15 @@ export function ListingPage() {
         </div>
 
         <div className="text-sm text-muted">
-          Bjussas av <strong className="text-ink">{l.is_mine ? 'dig' : l.giver_name}</strong> · {timeAgo(l.created_at)}
+          Bjussas av{' '}
+          {l.is_mine ? (
+            <strong className="text-ink">dig</strong>
+          ) : (
+            <Link to={`/anvandare/${l.giver_id}`} className="font-semibold text-brand underline">
+              {l.giver_name}
+            </Link>
+          )}{' '}
+          · {timeAgo(l.created_at)}
         </div>
 
         {l.is_mine ? (
@@ -129,14 +138,29 @@ export function ListingPage() {
             {l.my_request_status === 'approved' && (
               <Notice tone="good">✅ Du är godkänd! Adress och hämtningsinfo finns i chatten.</Notice>
             )}
-            {l.status === 'available' && l.my_request_status !== 'pending' && l.my_request_status !== 'approved' && (
-              <>
-                {l.queue_length > 0 && <p className="text-center text-sm text-muted">{l.queue_length} står redan i kö</p>}
-                <Button className="w-full" loading={request.isPending} onClick={() => request.mutate({ p_listing_id: l.id })}>
-                  💚 Vill ha
-                </Button>
-              </>
-            )}
+            {l.status === 'available' && l.my_request_status !== 'pending' && l.my_request_status !== 'approved' &&
+              (pickupStatus.data?.reached ? (
+                <div className="space-y-3 rounded-3xl bg-accent-soft p-4 text-center" data-testid="limit-nudge">
+                  <div className="text-3xl">🎉</div>
+                  <p className="font-bold">Du har hämtat {pickupStatus.data.monthly_limit} saker den här månaden!</p>
+                  <p className="text-sm">Har du något att skicka vidare? Gränsen finns så att alla grannar får chansen, och den nollställs den 1:a nästa månad.</p>
+                  <LinkButton to="/bjussa" className="w-full">
+                    Bjussa något
+                  </LinkButton>
+                </div>
+              ) : (
+                <>
+                  {pickupStatus.data && pickupStatus.data.used === pickupStatus.data.notice_at && (
+                    <p className="text-center text-xs text-muted" data-testid="limit-notice">
+                      Du har hämtat {pickupStatus.data.used} av {pickupStatus.data.monthly_limit} den här månaden.
+                    </p>
+                  )}
+                  {l.queue_length > 0 && <p className="text-center text-sm text-muted">{l.queue_length} står redan i kö</p>}
+                  <Button className="w-full" loading={request.isPending} onClick={() => request.mutate({ p_listing_id: l.id })}>
+                    💚 Vill ha
+                  </Button>
+                </>
+              ))}
             <Button variant="secondary" className="w-full" loading={chatBusy} onClick={openChat}>
               💬 {l.my_request_status === 'approved' ? 'Öppna chatten' : 'Fråga bjussaren'}
             </Button>

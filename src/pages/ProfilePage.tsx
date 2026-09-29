@@ -3,7 +3,8 @@ import { Link, useLocation } from 'react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import { PHOTO_BUCKET, supabase } from '../lib/supabase'
 import { useAuth, useMe } from '../lib/auth'
-import { rpc, useMyBlocks, refreshAll } from '../lib/queries'
+import { rpc, useMyBlocks, refreshAll, usePublicProfile, usePickupStatus } from '../lib/queries'
+import { StatsCard } from '../components/StatsCard'
 import { ChildrenCard } from '../components/ChildrenCard'
 import { Button, Card, ErrorBox, Input, Label, PageSpinner } from '../components/ui'
 
@@ -15,6 +16,8 @@ export function ProfilePage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<unknown>(null)
   const location = useLocation()
+  const stats = usePublicProfile(session?.user.id)
+  const pickup = usePickupStatus()
 
   useEffect(() => {
     if (location.hash) document.getElementById(location.hash.slice(1))?.scrollIntoView({ block: 'start' })
@@ -44,6 +47,15 @@ export function ProfilePage() {
         <h1 className="text-2xl font-extrabold">{profile.display_name}</h1>
         <p className="text-sm text-muted">📍 {profile.area_name}</p>
       </header>
+
+      {stats.data && <StatsCard p={stats.data} own />}
+      {pickup.data && (
+        <p className="px-1 text-xs text-muted" data-testid="pickup-status">
+          {pickup.data.free_left > 0
+            ? `Dina ${pickup.data.free_left} nästa hämtningar räknas inte mot månadsgränsen.`
+            : `Hämtningar den här månaden: ${pickup.data.used} av ${pickup.data.monthly_limit}.`}
+        </p>
+      )}
 
       <Card className="space-y-3">
         <h2 className="font-bold">Namn</h2>
