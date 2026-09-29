@@ -39,14 +39,16 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
+      - name: Installera webbläsare
+        run: npx playwright install --with-deps chromium
       - name: Installera PostGIS och pg_cron
         run: sudo apt-get update && sudo apt-get install -y postgresql-16-postgis-3 postgresql-16-cron
       - name: Starta lokal Supabase
-        run: sudo -E env "PATH=$PATH" bash scripts/local/start.sh
+        # Körs som root (databasen startas som användaren postgres) med egen hemkatalog,
+        # så att cachefiler inte hamnar i runner-användarens hemkatalog
+        run: sudo -E env "PATH=$PATH" HOME=/root bash scripts/local/start.sh
       - name: Databastester (säkerhetsregler och logik)
         run: bash scripts/local/test-db.sh
-      - name: Installera webbläsare
-        run: npx playwright install --with-deps chromium
       - name: Webbläsartester
         run: npm run test:e2e
       - name: Spara skärmbilder

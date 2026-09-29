@@ -73,6 +73,7 @@ export function NewListing() {
     if (photo) URL.revokeObjectURL(photo.previewUrl)
   }, [photo])
 
+  const analysisRun = useRef(0)
   const categoryRef = useRef(category)
   categoryRef.current = category
   const cat = category ? categoryById(category) : null
@@ -127,7 +128,10 @@ export function NewListing() {
       setPhoto(processed)
       setPhotoBusy(false)
       setAi({ state: 'loading' })
+      const run = ++analysisRun.current
       const result = await analyzePhoto(processed.full)
+      // Har man hunnit byta bild under tiden gäller inte det här svaret längre
+      if (run !== analysisRun.current) return
       if (result.kind === 'ok') {
         setAi({ state: 'done', suggestion: result.suggestion })
         if (!result.suggestion.contains_car_seat) applySuggestion(result.suggestion)

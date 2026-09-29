@@ -116,6 +116,8 @@ Appen fungerar även utan nyckel – då fyller man bara i fälten själv.
 
 > Ändrar du miljövariablerna senare måste du göra **Redeploy** för att de ska slå igenom.
 
+> **Ber länken om inloggning till Vercel?** Förhandsversioner av grenar är som standard skyddade. Antingen slår du ihop grenen med `main` (då hamnar appen på den öppna huvudadressen), eller så stänger du av skyddet: *Project → Settings → Deployment Protection → Vercel Authentication → Disabled*.
+
 ### Steg G (valfritt) – Adress i Supabase
 
 *Authentication → URL Configuration → Site URL*: lägg in din Vercel-adress, t.ex. `https://bjuss.vercel.app`. Det behövs inte för inloggningskoder men gör mejl och framtida funktioner rätt.
