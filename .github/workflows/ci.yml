@@ -19,12 +19,6 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
-      - uses: denoland/setup-deno@v2
-        with:
-          deno-version: v2.x
-      - name: Typkontroll av bildtolkningen (Edge Function)
-        working-directory: supabase/functions
-        run: deno check --node-modules-dir=none --config deno.json analyze-photo/index.ts
 
   e2e:
     name: Databas och webbläsare (lokal Supabase)
@@ -36,9 +30,6 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - uses: denoland/setup-deno@v2
-        with:
-          deno-version: v2.x
       - name: Installera webbläsare
         run: npx playwright install --with-deps chromium
       - name: Installera PostGIS och pg_cron

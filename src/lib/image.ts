@@ -5,7 +5,7 @@
 export interface ProcessedPhoto {
   full: Blob
   thumb: Blob
-  /** Liten bild som base64 (utan prefix), används för bildtolkning i steg 3 */
+  /** Lokal länk till den lilla bilden, för förhandsvisning */
   previewUrl: string
 }
 
@@ -50,13 +50,4 @@ export async function processPhoto(file: Blob): Promise<ProcessedPhoto> {
   const thumb = await render(bitmap, 520, 0.78)
   if ('close' in bitmap) bitmap.close()
   return { full, thumb, previewUrl: URL.createObjectURL(thumb) }
-}
-
-export function blobToBase64(blob: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(String(reader.result).split(',')[1] ?? '')
-    reader.onerror = () => reject(reader.error)
-    reader.readAsDataURL(blob)
-  })
 }

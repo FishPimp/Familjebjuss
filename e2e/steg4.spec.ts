@@ -12,16 +12,12 @@ function sql(q: string) {
 }
 
 async function publish(page: Page, sub: string) {
-  await fetch('http://localhost:54321/__anthropic/next', {
-    method: 'POST',
-    body: JSON.stringify({
-      category: 'toys', subcategory: sub, size_cm: null, shoe_size: null, quantity: 1, condition: 'like_new',
-      brand: null, description: '', contains_car_seat: false, contains_child: false, safety_product: false, confidence: 'high',
-    }),
-  })
   await page.goto('/bjussa')
   await page.getByTestId('photo-input').setInputFiles('e2e/fixtures/leksak.jpg')
-  await expect(page.getByTestId('ai-status')).toContainText('Förifyllt')
+  await expect(page.getByAltText('Din bild')).toBeVisible()
+  await page.getByRole('button', { name: /Leksaker/ }).click()
+  await page.getByRole('button', { name: sub }).click()
+  await page.getByRole('button', { name: /Som ny/ }).click()
   await page.getByRole('button', { name: 'Bjussa!' }).click()
   await expect(page.getByText('Tack! Din bjussning syns nu')).toBeVisible()
 }

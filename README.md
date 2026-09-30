@@ -27,16 +27,16 @@ Appen är en **PWA**: en hemsida som fungerar som en app. Den går att lägga p�
 |---|---|---|
 | 1 | Inloggning med kod via mejl, profil med område, annonser med foto, flöde inom 500 m med ungefärligt avstånd, "Vill ha", godkänn, chatt, markera hämtat, radera konto | ✅ Klart |
 | 2 | Filter och sök, "Passar mina barn", barnens storlekar och när nästa storlek behövs, kö och 24-timmarsregel, pålitlighetsbetyg, omdöme efter hämtning, rapportera och blockera | ✅ Klart |
-| 3 | Claude tolkar fotot och förifyller annonsen, bilbarnstolar spärras, varning för barn på bild och säkerhetsprodukter | ✅ Klart |
+| 3 | Bilbarnstolar spärras (ord i texten kontrolleras i appen och i databasen), varning för säkerhetsprodukter. *Bildtolkning med AI är borttagen – den kostade pengar.* | ✅ Klart |
 | 4 | Öppen statistik på profilen, medaljer, hämtningsgräns per månad | ✅ Klart |
-| 5 | Notiser, offline, paketering för Google Play | ⏳ Nästa |
-| Senare | Annonser, områdesstatistik som rapport, iOS-app | 📋 Förberett |
+| 5 | Notiser och offline (gratis). *Google Play kostar pengar – se [Kostnader](#kostnader).* | ⏳ Nästa |
+| Senare | Annonser och områdesstatistik som rapport | 📋 Förberett |
 
 ---
 
 ## Kom igång – engångsinställningar
 
-Du behöver fyra gratiskonton: **Supabase** (databas och inloggning), **GitHub** (har du redan), **Vercel** (visar appen) och **Anthropic** (bildtolkningen, betalas per användning).
+Du behöver tre gratiskonton: **Supabase** (databas och inloggning), **GitHub** (har du redan) och **Vercel** (visar appen). Inget av dem kräver betalkort.
 
 > 💡 **Tips:** Gör stegen i ordning och bocka av. Skriv ner lösenord och koder i en lösenordshanterare – aldrig i koden eller i en chatt.
 
@@ -57,7 +57,7 @@ Du behöver fyra gratiskonton: **Supabase** (databas och inloggning), **GitHub**
 
 ### Steg B – GitHub (så uppdateras databasen automatiskt)
 
-Varje gång koden i `supabase/` ändras kör GitHub automatiskt uppdateringen av din databas och bildtolkningen. Du behöver bara lämna nycklarna en gång:
+Varje gång koden i `supabase/` ändras kör GitHub automatiskt uppdateringen av din databas. Du behöver bara lämna nycklarna en gång:
 
 1. Öppna repot på GitHub → **Settings → Secrets and variables → Actions → New repository secret**.
 2. Lägg in dessa (namn exakt som nedan):
@@ -67,9 +67,8 @@ Varje gång koden i `supabase/` ändras kör GitHub automatiskt uppdateringen av
 | `SUPABASE_ACCESS_TOKEN` | Access token från steg A4 |
 | `SUPABASE_DB_PASSWORD` | Databaslösenordet från steg A2 |
 | `SUPABASE_PROJECT_REF` | Project ref från steg A3 |
-| `ANTHROPIC_API_KEY` | Nyckeln från steg E (kan läggas in senare) |
 
-3. Gå till fliken **Actions → Uppdatera Supabase → Run workflow** (välj grenen `claude/new-session-6y1f46`, eller `main` när koden är sammanslagen). Efter 1–2 minuter ska det bli en grön bock ✅. Då finns alla tabeller, säkerhetsregler och bildtolkningen i din Supabase.
+3. Gå till fliken **Actions → Uppdatera Supabase → Run workflow** (välj grenen `claude/new-session-6y1f46`, eller `main` när koden är sammanslagen). Efter 1–2 minuter ska det bli en grön bock ✅. Då finns alla tabeller och säkerhetsregler i din Supabase.
 
 ### Steg C – Inloggningsmejlet (kod i stället för länk)
 
@@ -89,18 +88,9 @@ Supabases inbyggda e-post är bara till för test:
 
 **Så testar du med två konton nu:** bjud in den andra e-postadressen (t.ex. din partners) under *Organization → Team → Invite member*. Personen måste acceptera inbjudan.
 
-**Inför lansering** kopplar du en riktig e-posttjänst under *Authentication → Emails → SMTP Settings*, t.ex. [Resend](https://resend.com) (kräver en egen domän, t.ex. `bjuss.se`) eller [Brevo](https://brevo.com). Höj sedan gränsen under *Authentication → Rate Limits*.
+**Inför lansering (gratis):** skapa ett gratiskonto hos [Brevo](https://brevo.com) (300 mejl per dag utan kostnad, ingen egen domän behövs – du verifierar bara avsändaradressen). Lägg in Brevos SMTP-uppgifter under *Authentication → Emails → SMTP Settings* och höj gränsen under *Authentication → Rate Limits*. Mejlen kan ibland hamna i skräpposten när man inte har en egen domän; en egen domän kostar pengar och är därför inte med.
 
-### Steg E – Anthropic (bildtolkningen)
-
-1. Gå till [console.anthropic.com](https://console.anthropic.com), skapa konto och lägg in ett betalkort under *Billing*.
-2. Sätt en **utgiftsgräns** under *Limits* (t.ex. 100 kr/månad) så att du aldrig får en överraskning.
-3. **API Keys → Create Key**, döp den till `bjuss`. Kopiera nyckeln.
-4. Lägg in den som GitHub-hemlighet `ANTHROPIC_API_KEY` (steg B) och kör **Uppdatera Supabase** igen.
-
-Appen fungerar även utan nyckel – då fyller man bara i fälten själv.
-
-### Steg F – Vercel (appen på nätet)
+### Steg E – Vercel (appen på nätet)
 
 1. Gå till [vercel.com](https://vercel.com) och logga in med GitHub.
 2. **Add New → Project** → välj repot **Familjebjuss** → **Import**.
@@ -118,7 +108,7 @@ Appen fungerar även utan nyckel – då fyller man bara i fälten själv.
 
 > **Ber länken om inloggning till Vercel?** Förhandsversioner av grenar är som standard skyddade. Antingen slår du ihop grenen med `main` (då hamnar appen på den öppna huvudadressen), eller så stänger du av skyddet: *Project → Settings → Deployment Protection → Vercel Authentication → Disabled*.
 
-### Steg G (valfritt) – Adress i Supabase
+### Steg F (valfritt) – Adress i Supabase
 
 *Authentication → URL Configuration → Site URL*: lägg in din Vercel-adress, t.ex. `https://bjuss.vercel.app`. Det behövs inte för inloggningskoder men gör mejl och framtida funktioner rätt.
 
@@ -129,7 +119,7 @@ Appen fungerar även utan nyckel – då fyller man bara i fälten själv.
 1. Öppna Vercel-länken i **Chrome på Android**.
 2. Logga in med din e-post → skriv in koden från mejlet.
 3. Godkänn integritetstexten, välj namn, tryck **Använd min plats** (eller skriv adressen) och välj ditt område.
-4. Tryck **＋ Bjussa** → **Fota** → kontrollera förifyllningen → **Bjussa!**
+4. Tryck **＋ Bjussa** → **Fota** → välj kategori, storlek och skick → **Bjussa!**
 5. Lägg på hemskärmen: Chrome-menyn **⋮ → Lägg till på startskärmen**.
 
 **Testa hela flödet med två konton** (t.ex. din telefon och en dator, eller din och din partners telefon):
@@ -160,7 +150,6 @@ Allt justerbart ligger i en enda rad i databasen: Supabase → **Table Editor �
 | `medal_cap_per_taker_month` | 2 | Max medaljpoäng per mottagare och månad (skydd mot fusk) |
 | `reports_to_hide` | 3 | Antal olika grannar som måste rapportera för att en annons döljs automatiskt |
 | `max_address_changes_30d` | 3 | Hur många gånger man får flytta sin adress per 30 dagar |
-| `ai_daily_limit` | 30 | Bildtolkningar per person och dag (håller kostnaden nere) |
 
 Kategorier, storlekar, medaljnamn och texter ändras i koden: [`src/config.ts`](src/config.ts) och [`src/lib/medals.ts`](src/lib/medals.ts).
 
@@ -186,7 +175,7 @@ select * from private.area_stats order by month desc, pickups desc;
 
 | Meddelande | Vad det betyder | Gör så här |
 |---|---|---|
-| *Bjuss behöver kopplas till Supabase* | Miljövariablerna saknas i Vercel | Steg F, sedan **Redeploy** |
+| *Bjuss behöver kopplas till Supabase* | Miljövariablerna saknas i Vercel | Steg E, sedan **Redeploy** |
 | *Supabase skickar bara mejl till medlemmar i ditt Supabase-team…* | Inbyggd e-post används och adressen är inte med i teamet | Steg D |
 | *För många försök på kort tid* | Mejlgränsen (2 per timme) eller för många koder | Vänta en timme, eller koppla egen e-posttjänst (steg D) |
 | *Koden stämmer inte eller har gått ut* | Fel kod, eller äldre än en timme | Tryck **Skicka ny kod** |
@@ -198,7 +187,6 @@ select * from private.area_stats order by month desc, pickups desc;
 | *Du har bytt adress många gånger nyligen* | Skydd mot att "flytta runt" för att se andra områden | Vänta, eller höj `max_address_changes_30d` |
 | *Bilbarnstolar och babyskydd kan inte bjussas* | Spärren mot bilbarnstolar | Avsiktligt – bilbarnstolar får inte skänkas |
 | *Du har nått månadens gräns för hämtningar* | 5 hämtningar denna månad | Nollställs den 1:a |
-| *Bildtolkningen fungerade inte just nu* | Claude svarade inte | Fyll i själv; kontrollera Anthropic-nyckel och saldo |
 | *Ingen kontakt med servern* | Ingen internetuppkoppling, eller Supabase-projektet pausat | Kontrollera nätet; väck projektet i Supabase (gratisprojekt pausas efter en veckas inaktivitet) |
 | *Du har inte behörighet att göra det här* | Databasens säkerhetsregler stoppade något | Logga ut och in; hör av dig om det fortsätter |
 
@@ -224,7 +212,7 @@ select * from private.area_stats order by month desc, pickups desc;
 - **Hämtningsgränsen** gäller per kalendermånad (nollställs den 1:a). Godkända men ännu inte hämtade saker räknas, så att man inte kan boka förbi gränsen.
 - **Fusk med medaljer:** medaljpoäng kräver mottagarens bekräftelse och räknas högst två gånger per mottagare och månad. Andra skydd: gräns för adressbyten, gräns för antal obesvarade förfrågningar, rapportering som döljer annonser automatiskt.
 - **Medaljnamn (förslag):** 🛍️ Första kassen (5), 🚪 Dörrhjälte (10), 😇 Trappuppgångens ängel (25), 🥇 Guldgranne (50), 💛 Hundra hjärtan (100), 👑 Bjussmästare (250), 🏆 Kvarterslegend (500).
-- **Claude-modell:** `claude-opus-5-5` med låg "effort" (snabbt och billigt nog för att tolka en bild). Om Claude av säkerhetsskäl avböjer en bild försöker servern automatiskt med en annan modell (*fallback*). Modellen kan bytas med hemligheten `ANTHROPIC_MODEL` i Supabase.
+- **Ingen AI-tolkning av bilder:** den kostade 20–30 öre per bild och är borttagen. Formuläret går ändå fort med stora knappar. Regeln "inga barn på bilderna" står i appen och godkänns vid registrering, och grannar kan rapportera "Barn syns på bilden". Bilbarnstolar spärras via orden i annonsen.
 
 **Fler risker vi ser (förslag till senare):**
 - Den som skapar många e-postkonton kan kringgå hämtningsgränsen. Motåtgärd: verifiering med BankID eller mobilnummer för fler än X hämtningar.
@@ -235,32 +223,43 @@ select * from private.area_stats order by month desc, pickups desc;
 
 ## Säkerhet och integritet
 
-- **Row Level Security** på alla tabeller: databasen själv bestämmer vem som ser vad, även om någon manipulerar appen. Över 130 automatiska kontroller testar detta.
+- **Row Level Security** på alla tabeller: databasen själv bestämmer vem som ser vad, även om någon manipulerar appen. Nästan 130 automatiska kontroller testar detta.
 - **Gatuadress, GPS-position och portkod** ligger i ett privat schema som appen inte kan läsa direkt. De lämnas bara ut till den mottagare som givaren godkänt, och döljs igen efter hämtning.
 - **Bilder** krymps i telefonen och all metadata (EXIF, GPS, kameramodell) tas bort innan uppladdning. Bilderna ligger i privat lagring och visas via tillfälliga länkar.
-- **Nycklar** finns aldrig i koden. Claude-nyckeln finns bara på servern (Supabase Edge Function).
+- **Nycklar** finns aldrig i koden.
 - **GDPR:** samtycke vid registrering, integritetstext på svenska (i appen under *Integritet*), radera konto och all data under *Profil*, data i EU (Stockholm).
 
 ---
 
 ## Kostnader
 
-| Tjänst | Kostnad |
-|---|---|
-| Supabase | Gratis upp till 500 MB databas och 1 GB bilder. Gratisprojekt pausas efter en veckas inaktivitet (väcks med ett klick). |
-| Vercel | Gratis för hobbyprojekt. |
-| Anthropic | Cirka 20–30 öre per tolkad bild. Max 30 bilder per person och dag (`ai_daily_limit`). Sätt en utgiftsgräns i Anthropic Console. |
-| OpenStreetMap | Gratis vid låg användning. Vid många användare byter vi till en betald adresstjänst. |
+**Allt i Bjuss är gratis för dig.** Inget konto kräver betalkort, och inget debiteras automatiskt.
 
----
+| Tjänst | Kostnad för dig | Bra att veta |
+|---|---|---|
+| Supabase | 0 kr | Gratis upp till 500 MB databas, 1 GB bilder och 50 000 användare per månad. Blir något fullt begränsas projektet – du får ingen räkning utan att själv uppgradera. Gratisprojekt pausas efter en veckas inaktivitet (väcks med ett klick). |
+| Vercel | 0 kr | Gratisplanen gäller för **icke-kommersiella** projekt. Om Bjuss senare ska visa annonser byter vi till Cloudflare Pages, som är gratis även kommersiellt. |
+| GitHub | 0 kr | Repot är publikt, då är de automatiska testerna (Actions) gratis. |
+| OpenStreetMap | 0 kr | Adressökningen är gratis vid låg användning. Växer appen mycket behöver vi en annan lösning. |
+| E-post | 0 kr | Supabases inbyggda e-post (för test) eller Brevo gratis (300 mejl/dag). |
+
+**Det här kostar pengar och är därför borttaget eller bortvalt:**
+
+| Vad | Kostnad | Vad vi gör i stället |
+|---|---|---|
+| AI-tolkning av bilder (Claude) | 20–30 öre per bild | **Borttagen.** Man fyller i fälten själv med knappar. |
+| Google Play (steg 5) | ca 250 kr en gång (25 USD) | Görs inte. Appen installeras gratis från webbläsaren: Chrome → ⋮ → *Lägg till på startskärmen*. |
+| App Store / iOS-app | ca 1 000 kr per år (99 USD) | Görs inte. På iPhone: Safari → Dela → *Lägg till på hemskärmen*. |
+| Egen domän (t.ex. bjuss.se) | ca 100–200 kr per år | Görs inte. Appen ligger på en gratisadress hos Vercel (`….vercel.app`). |
+| Betald e-posttjänst | varierar | Görs inte. Brevo gratis räcker långt. |
+| Uppgradering av Supabase eller Vercel | från ca 250 kr/mån | Görs inte. Gratisnivåerna räcker för ett bostadsområde eller flera. |
 
 ## För utvecklare
 
 ### Teknik
 
 - **App:** React 19 + TypeScript + Vite + Tailwind CSS, React Router, TanStack Query
-- **Backend:** Supabase (Postgres + PostGIS, Auth med e-postkod, Storage, Realtime, Edge Functions)
-- **Bildtolkning:** Claude via Anthropics TypeScript-SDK i en Edge Function (Deno)
+- **Backend:** Supabase (Postgres + PostGIS, Auth med e-postkod, Storage, Realtime)
 - **Hosting:** Vercel. Databasen uppdateras via GitHub Actions.
 
 ### Mappar
@@ -273,7 +272,6 @@ src/                      appen
   components/             återanvändbara delar
 supabase/
   migrations/             databasen steg för steg (tabeller, RLS, funktioner)
-  functions/analyze-photo Edge Function som frågar Claude
   templates/              inloggningsmejlet
   tests/                  databastester (säkerhetsregler och logik)
 e2e/                      webbläsartester som klickar igenom appen
@@ -285,7 +283,7 @@ scripts/local/            lokal "mini-Supabase" för tester
 
 ```bash
 npm install
-bash scripts/local/start.sh     # startar databas, Auth, API, lagring, låtsas-e-post och låtsas-Claude
+bash scripts/local/start.sh     # startar databas, Auth, API, lagring och låtsas-e-post
 bash scripts/local/test-db.sh   # databastester
 npm test                        # enhetstester
 npm run test:e2e                # webbläsartester (startar Vite själv)

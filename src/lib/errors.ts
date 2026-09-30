@@ -30,7 +30,6 @@ const BJUSS_ERRORS: Record<string, string> = {
   BJUSS_ALREADY_RATED: 'Du har redan lämnat omdöme.',
   BJUSS_NOT_PICKED_UP: 'Du kan lämna omdöme först efter hämtningen.',
   BJUSS_ADDRESS_CHANGE_LIMIT: 'Du har bytt adress många gånger nyligen. Vänta några dagar och försök igen.',
-  BJUSS_AI_LIMIT: 'Du har använt bildtolkningen många gånger i dag. Fyll i fälten själv så länge.',
   BJUSS_REPORT_REASON: 'Välj en anledning till rapporten.',
   BJUSS_CANNOT_BLOCK_SELF: 'Du kan inte blockera dig själv.',
 }

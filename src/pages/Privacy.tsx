@@ -59,10 +59,6 @@ export function Privacy() {
             OpenStreetMap (Nominatim) – när du söker fram din adress skickas adressen eller positionen dit för att hitta
             ditt område. Inget annat skickas.
           </li>
-          <li>
-            Anthropic (Claude) – om du använder bildtolkning skickas bilden för att föreslå kategori, storlek och skick.
-            Anthropic använder inte bilder som skickas via API:t för att träna sina modeller.
-          </li>
         </ul>
 
         <h2>Dina rättigheter</h2>

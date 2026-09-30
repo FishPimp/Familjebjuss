@@ -20,8 +20,3 @@ content_path = "./supabase/templates/magic_link.html"
 [auth.email.template.confirmation]
 subject = "Din kod till Bjuss"
 content_path = "./supabase/templates/confirmation.html"
-
-# Bildtolkningen kontrollerar själv inloggningen (via databasen), så gatewayens
-# JWT-kontroll stängs av – den fungerar inte med Supabases nya API-nycklar.
-[functions.analyze-photo]
-verify_jwt = false

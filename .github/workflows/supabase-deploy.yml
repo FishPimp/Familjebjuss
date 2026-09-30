@@ -1,11 +1,8 @@
 # Uppdaterar din Supabase automatiskt när koden i supabase/ ändras:
-#   1. kör nya databasmigreringar (tabeller, säkerhetsregler, funktioner)
-#   2. sparar Claude-nyckeln (om du lagt in den som GitHub-hemlighet)
-#   3. publicerar bildtolkningen (Edge Function "analyze-photo")
+# kör nya databasmigreringar (tabeller, säkerhetsregler, funktioner).
 #
 # Kräver tre hemligheter under Settings -> Secrets and variables -> Actions:
-#   SUPABASE_ACCESS_TOKEN, SUPABASE_DB_PASSWORD, SUPABASE_PROJECT_REF
-# och gärna ANTHROPIC_API_KEY. Se README.
+#   SUPABASE_ACCESS_TOKEN, SUPABASE_DB_PASSWORD, SUPABASE_PROJECT_REF. Se README.
 name: Uppdatera Supabase
 
 on:
@@ -25,7 +22,6 @@ jobs:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
       SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
     steps:
       - name: Finns hemligheterna?
         id: check
@@ -52,11 +48,3 @@ jobs:
       - name: Uppdatera databasen
         if: steps.check.outputs.ready == 'true'
         run: supabase db push --yes --password "$SUPABASE_DB_PASSWORD"
-
-      - name: Spara Claude-nyckeln i Supabase
-        if: steps.check.outputs.ready == 'true' && env.ANTHROPIC_API_KEY != ''
-        run: supabase secrets set --project-ref "$SUPABASE_PROJECT_REF" ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY"
-
-      - name: Publicera bildtolkningen
-        if: steps.check.outputs.ready == 'true'
-        run: supabase functions deploy analyze-photo --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt --use-api
